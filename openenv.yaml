@@ -1,0 +1,90 @@
+# AI Job Application Tracker — OpenEnv Specification
+# ===================================================
+
+name: job_application_tracker
+version: "1.0.0"
+description: >
+  A simulation environment where an AI agent manages job applications.
+  The agent must classify application status, assign priority, and decide
+  the best next action for each application.
+
+author: "Job Tracker Team"
+
+# ── Environment metadata ─────────────────────────────────────────────────
+
+environment:
+  entrypoint: server.py
+  port: 7860
+  observation_space:
+    type: dict
+    fields:
+      company: string
+      role: string
+      status: string
+      days_left: integer
+  action_space:
+    type: string
+    options:
+      - "set_status:<applied|interview|rejected|offer>"
+      - "set_priority:<high|medium|low>"
+      - "take_action:<follow_up|prepare_interview|accept_offer|ignore>"
+      - "next"
+
+# ── Tasks ────────────────────────────────────────────────────────────────
+
+tasks:
+  - name: status_classification
+    difficulty: easy
+    description: "Classify the application status as applied, interview, rejected, or offer."
+    grader:
+      type: exact_match
+      score_range: [0.0, 1.0]
+
+  - name: priority_assignment
+    difficulty: medium
+    description: "Assign priority (high, medium, low) with partial credit for adjacent levels."
+    grader:
+      type: partial_match
+      score_range: [0.0, 1.0]
+
+  - name: decision_making
+    difficulty: hard
+    description: "Choose the optimal action using weighted scoring across status, priority, and action."
+    grader:
+      type: weighted_composite
+      weights:
+        status: 0.3
+        priority: 0.3
+        action: 0.4
+      score_range: [0.0, 1.0]
+
+# ── Reward ───────────────────────────────────────────────────────────────
+
+reward:
+  type: continuous
+  range: [-0.4, 1.0]
+  breakdown:
+    correct_status: +0.3
+    correct_priority: +0.3
+    correct_action: +0.4
+    incorrect_action: -0.2
+    missing_prediction: -0.1
+
+# ── Deployment ───────────────────────────────────────────────────────────
+
+deployment:
+  docker:
+    dockerfile: Dockerfile
+    port: 7860
+  huggingface:
+    sdk: docker
+    port: 7860
+
+# ── Inference ────────────────────────────────────────────────────────────
+
+inference:
+  script: inference.py
+  env_vars:
+    - OPENAI_API_KEY
+    - MODEL_NAME
+    - API_BASE_URL
