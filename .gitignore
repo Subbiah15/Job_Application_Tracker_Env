@@ -4,4 +4,3 @@ __pycache__/
 test_output.txt
 .env
 *.pyc
-static
